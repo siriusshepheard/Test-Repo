@@ -1,0 +1,2 @@
+﻿# file_pattern: "*.py"
+# instructions: You are a Python developer. Write clean, PEP 8-compliant Python code. Use type hints where applicable. Include docstrings for functions and handle exceptions appropriately. Format code with Black.
