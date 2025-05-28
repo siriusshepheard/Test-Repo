@@ -53,6 +53,12 @@ def validate_pipeline(yaml_content: Dict[str, Any]) -> List[str]:
     errors = []
     logging.info("Starting pipeline validation...")
     
+    if yaml_content is None:
+        error_msg = "Invalid or empty pipeline configuration"
+        logging.error(error_msg)
+        errors.append(error_msg)
+        return errors
+    
     # Validate required top-level fields
     required_fields = ['trigger', 'pool']
     for field in required_fields:
@@ -103,27 +109,38 @@ def load_pipeline_file(file_path: str) -> Dict[str, Any]:
     pipeline_path = Path(file_path)
     
     if not pipeline_path.exists():
-        raise FileNotFoundError(f"Pipeline file not found at: {pipeline_path.absolute()}")
+        logging.error(f"Pipeline file not found at: {pipeline_path.absolute()}")
+        return None
     
     if not pipeline_path.is_file():
-        raise ValueError(f"Path exists but is not a file: {pipeline_path.absolute()}")
+        logging.error(f"Path exists but is not a file: {pipeline_path.absolute()}")
+        return None
     
     try:
         with pipeline_path.open('r', encoding='utf-8') as f:
-            return yaml.safe_load(f)
+            content = yaml.safe_load(f)
+            if content is None:  # Empty YAML file
+                logging.error("Pipeline file is empty")
+                return None
+            return content
     except yaml.YAMLError as e:
-        raise yaml.YAMLError(f"Failed to parse YAML file: {e}")
+        logging.error(f"Failed to parse YAML file: {e}")
+        return None
     except UnicodeDecodeError as e:
-        raise UnicodeDecodeError(f"Failed to read file - encoding error: {e}")
+        logging.error(f"Failed to read file - encoding error: {e}")
+        return None
 
-def main():
+def main() -> bool:
     setup_logging()
     logging.info("Starting pipeline validation script")
     
     try:
         pipeline_content = load_pipeline_file('azure-pipelines.yml')
+        if pipeline_content is None:
+            print("\nValidation failed: Invalid or missing pipeline file")
+            return False
+            
         logging.info("Successfully loaded azure-pipelines.yml")
-        
         errors = validate_pipeline(pipeline_content)
         
         if errors:
@@ -131,28 +148,17 @@ def main():
             print("\nValidation found the following issues:")
             for error in errors:
                 print(f"- {error}")
-            sys.exit(1)
+            return False
         else:
             logging.info("Validation completed successfully with no issues")
             print("\nValidation successful! No issues found.")
-            sys.exit(0)
+            return True
             
-    except FileNotFoundError as e:
-        logging.critical(f"File error: {e}")
-        print(f"Error: {e}")
-        sys.exit(1)
-    except yaml.YAMLError as e:
-        logging.critical(f"YAML parsing error: {e}")
-        print(f"Error parsing YAML file: {e}")
-        sys.exit(1)
-    except UnicodeDecodeError as e:
-        logging.critical(f"File encoding error: {e}")
-        print(f"Error reading file: {e}")
-        sys.exit(1)
     except Exception as e:
         logging.critical(f"Unexpected error: {e}", exc_info=True)
         print(f"Unexpected error: {e}")
-        sys.exit(1)
+        return False
 
 if __name__ == "__main__":
-    main() 
+    success = main()
+    sys.exit(0 if success else 1) 
