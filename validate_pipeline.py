@@ -84,23 +84,63 @@ def validate_pipeline(yaml_content: Dict[str, Any]) -> List[str]:
     # Validate each stage
     for i, stage in enumerate(stages, 1):
         logging.info(f"Validating stage {i} of {len(stages)}")
+        
+        # Validate stage is a dictionary
+        if not isinstance(stage, dict):
+            error_msg = f"Stage {i} must be a dictionary"
+            logging.error(error_msg)
+            errors.append(error_msg)
+            continue
+            
+        # Check for required stage fields
         if 'jobs' not in stage:
             error_msg = f"Stage '{stage.get('displayName', 'unnamed')}' must contain 'jobs'"
+            logging.error(error_msg)
+            errors.append(error_msg)
+            continue
+            
+        # Validate jobs list
+        jobs = stage['jobs']
+        if not isinstance(jobs, list):
+            error_msg = f"Jobs in stage '{stage.get('displayName', 'unnamed')}' must be a list"
+            logging.error(error_msg)
+            errors.append(error_msg)
+            continue
+            
+        if not jobs:
+            error_msg = f"Stage '{stage.get('displayName', 'unnamed')}' must contain at least one job"
             logging.error(error_msg)
             errors.append(error_msg)
             continue
         
         # Validate jobs in stage
         for j, job in enumerate(stage['jobs'], 1):
+            if not isinstance(job, dict):
+                error_msg = f"Job {j} in stage '{stage.get('displayName', 'unnamed')}' must be a dictionary"
+                logging.error(error_msg)
+                errors.append(error_msg)
+                continue
+                
+            if 'steps' not in job:
+                error_msg = f"Job {j} in stage '{stage.get('displayName', 'unnamed')}' must contain 'steps'"
+                logging.error(error_msg)
+                errors.append(error_msg)
+                continue
+                
+            if not isinstance(job['steps'], list):
+                error_msg = f"Steps in job {j} of stage '{stage.get('displayName', 'unnamed')}' must be a list"
+                logging.error(error_msg)
+                errors.append(error_msg)
+                continue
+                
             logging.debug(f"Validating job {j} in stage {i}")
-            if isinstance(job, dict) and 'steps' in job:
-                # Validate each step in the job
-                for step in job['steps']:
-                    step_name = step.get('displayName', 'unnamed step')
-                    step_errors = validate_task(step, step_name)
-                    if step_errors:
-                        logging.warning(f"Found {len(step_errors)} issues in step '{step_name}'")
-                        errors.extend(step_errors)
+            # Validate each step in the job
+            for step in job['steps']:
+                step_name = step.get('displayName', 'unnamed step')
+                step_errors = validate_task(step, step_name)
+                if step_errors:
+                    logging.warning(f"Found {len(step_errors)} issues in step '{step_name}'")
+                    errors.extend(step_errors)
     
     return errors
 
