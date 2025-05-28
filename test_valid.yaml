@@ -1,1 +1,13 @@
-key: value
+
+trigger:
+  - main
+pool:
+  vmImage: 'ubuntu-latest'
+stages:
+  - stage: Build
+    jobs:
+      - job: BuildJob
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'

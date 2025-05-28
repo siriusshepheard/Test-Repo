@@ -1,1 +1,9 @@
-key: [value
+
+stages:  # Missing trigger and pool
+  - stage: Build
+    jobs:
+      - job: BuildJob
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'

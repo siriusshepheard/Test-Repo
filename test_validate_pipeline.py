@@ -19,7 +19,8 @@ stages:
 """
     with open("test_valid.yaml", "w", encoding="utf-8") as f:
         f.write(valid_pipeline)
-    assert validate_pipeline("test_valid.yaml") == True
+    # Check that there are no validation errors
+    assert len(validate_pipeline("test_valid.yaml")) == 0
 
 def test_validate_pipeline_invalid():
     """Test validate_pipeline with an invalid YAML file - missing required fields."""
@@ -35,14 +36,22 @@ stages:  # Missing trigger and pool
 """
     with open("test_invalid.yaml", "w", encoding="utf-8") as f:
         f.write(invalid_pipeline)
-    assert validate_pipeline("test_invalid.yaml") == False
+    # Check that there are validation errors
+    errors = validate_pipeline("test_invalid.yaml")
+    assert len(errors) > 0
+    assert "Missing required field 'trigger'" in errors
+    assert "Missing required field 'pool'" in errors
 
 def test_validate_pipeline_empty_file():
     """Test validate_pipeline with an empty YAML file."""
     with open("test_empty.yaml", "w", encoding="utf-8") as f:
         f.write("")
-    assert validate_pipeline("test_empty.yaml") == False
+    # Check that there are validation errors
+    errors = validate_pipeline("test_empty.yaml")
+    assert len(errors) > 0
 
 def test_validate_pipeline_non_existent_file():
     """Test validate_pipeline with a non-existent file."""
-    assert validate_pipeline("non_existent.yaml") == False
+    # Check that there are validation errors
+    errors = validate_pipeline("non_existent.yaml")
+    assert len(errors) > 0
